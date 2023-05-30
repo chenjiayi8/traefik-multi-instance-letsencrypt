@@ -1,0 +1,68 @@
+version: '3.7'
+
+services:
+  nginx:
+    build: 
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+
+  traefik_abc:
+    image: traefik:v2.5
+    container_name: traefik_abc
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    labels:
+      - "traefik.http.routers.abc.rule=Host(`abc.com`)"
+      - "traefik.http.routers.abc.service=app_abc"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./letsencrypt:/letsencrypt"
+
+  traefik_efg:
+    image: traefik:v2.5
+    container_name: traefik_efg
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    labels:
+      - "traefik.http.routers.efg.rule=Host(`efg.com`)"
+      - "traefik.http.routers.efg.service=app_efg"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./letsencrypt:/letsencrypt"
+
+  app_abc:
+    image: traefik/whoami:latest
+    container_name: app_abc
+    command: 
+      - "--port=8081"
+      - "--name=abc"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.app_abc.loadbalancer.server.port=8081"
+      - "traefik.http.routers.app_abc.rule=Host(`abc.com`)"
+      - "traefik.http.routers.app_abc.entrypoints=web"
+
+  app_efg:
+    image: traefik/whoami:latest
+    container_name: app_efg
+    command: 
+      - "--port=8082"
+      - "--name=efg"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.app_efg.loadbalancer.server.port=8082"
+      - "traefik.http.routers.app_efg.rule=Host(`efg.com`)"
+      - "traefik.http.routers.app_efg.entrypoints=web"
