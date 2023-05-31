@@ -11,3 +11,6 @@ RUN apt-get install bash -y
 
 # replace sh with bash
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+
+RUN apt-get install inetutils-ping -y
